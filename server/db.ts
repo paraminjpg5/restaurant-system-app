@@ -1,6 +1,6 @@
-import { eq, and, desc } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, categories, menuItems, customizationOptions, customizationValues, menuItemCustomizations, orders, orderItems, favorites } from "../drizzle/schema";
+import { InsertUser, users } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -89,78 +89,4 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// Menu queries
-export async function getCategories() {
-  const db = await getDb();
-  if (!db) return [];
-  return db.select().from(categories).orderBy(categories.order);
-}
-
-export async function getMenuItemsByCategory(categoryId: number) {
-  const db = await getDb();
-  if (!db) return [];
-  return db.select().from(menuItems)
-    .where(and(eq(menuItems.categoryId, categoryId), eq(menuItems.available, true)))
-    .orderBy(menuItems.order);
-}
-
-export async function getMenuItemWithCustomizations(menuItemId: number) {
-  const db = await getDb();
-  if (!db) return null;
-  const item = await db.select().from(menuItems)
-    .where(eq(menuItems.id, menuItemId))
-    .limit(1);
-  if (!item.length) return null;
-  const customizations = await db.select().from(menuItemCustomizations)
-    .where(eq(menuItemCustomizations.menuItemId, menuItemId));
-  return { item: item[0], customizations };
-}
-
-// Order queries
-export async function createOrder(data: any) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  const result = await db.insert(orders).values(data);
-  return result;
-}
-
-export async function getUserOrders(userId: number) {
-  const db = await getDb();
-  if (!db) return [];
-  return db.select().from(orders)
-    .where(eq(orders.userId, userId))
-    .orderBy(desc(orders.createdAt));
-}
-
-export async function getOrderDetails(orderId: number) {
-  const db = await getDb();
-  if (!db) return null;
-  const order = await db.select().from(orders)
-    .where(eq(orders.id, orderId))
-    .limit(1);
-  if (!order.length) return null;
-  const items = await db.select().from(orderItems)
-    .where(eq(orderItems.orderId, orderId));
-  return { order: order[0], items };
-}
-
-export async function getAllOrders() {
-  const db = await getDb();
-  if (!db) return [];
-  return db.select().from(orders)
-    .orderBy(desc(orders.createdAt));
-}
-
-export async function updateOrderStatus(orderId: number, status: string) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  return db.update(orders)
-    .set({ status: status as any, updatedAt: new Date() })
-    .where(eq(orders.id, orderId));
-}
-
-export async function createOrderItem(data: any) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  return db.insert(orderItems).values(data);
-}
+// TODO: add feature queries here as your schema grows.
